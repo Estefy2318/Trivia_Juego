@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego de Trivia </title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+    <style>
+        body {
+            background-image: url('https://wallpapers.com/images/hd/broken-glass-3d-nature-4cwz7k720w6qie48.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+        .hidden { display: none; }
+        .btn { padding: 10px 20px; border-radius: 8px; margin: 5px; cursor: pointer; }
+        .btn-hint { background-color: #FF9800; color: white; }
+        .btn-call { background-color: #2ecc71; color: white; }
+        .btn-audience { background-color: #e67e22; color: white; }
+    </style>
+</head>
+<body class="bg-green-100 flex items-center justify-center h-screen">
+    <audio id="backgroundMusic" src="Tema.mp3" autoplay loop></audio>
+
+    <div id="juego" class="bg-white p-8 rounded-2xl shadow-lg text-center w-96">
+        <h1 id="preguntaTitulo" class="text-2xl font-bold text-green-600 mb-4"></h1>
+        <p id="preguntaTexto" class="text-gray-600 mb-6"></p>
+        <div id="opciones" class="grid grid-cols-2 gap-4 mb-6"></div>
+
+        <button id="fiftyFiftyButton" class="btn btn-hint" onclick="usar5050()">50:50</button>
+        <button id="btnLlamada" class="btn btn-call" onclick="llamarAmigo()">📞 Llamada a un amigo</button>
+        <button id="btnPublico" class="btn btn-audience" onclick="preguntarPublico()">🏟️ Pregunta al público</button>
+        <p id="resultado" class="text-lg font-semibold mt-4"></p>
+    </div>
+    <div id="pantallaPuntaje" class="hidden bg-white p-8 rounded-2xl shadow-lg text-center w-96">
+        <h1 class="text-2xl font-bold text-red-600 mb-4">Juego Terminado</h1>
+        <p id="puntajeFinal" class="text-gray-600 mb-6"></p>
+        <button onclick="reiniciarJuego()" 
+            class="bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-600 transition">
+            Volver a Intentar
+        </button>
+        <button onclick="window.location.href='prueba.html'" 
+            class="bg-red-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-600 transition mt-4">
+            Regresar al Inicio
+        </button>
+        <button onclick="window.location.href='mpreguntas.html'"
+            class="bg-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-600 transition mt-4">
+            Mas Cuestionarios
+        </button>
+    </div>
+
+    <script>
+        const preguntas = [
+            { pregunta: "¿Cuál es el planeta más grande del sistema solar?", respuestas: ["Marte", "Júpiter", "Venus", "Saturno"], correcta: 1 },
+            { pregunta: "¿Cuál es el metal más abundante en la corteza terrestre?", respuestas: ["Plata", "Hierro", "Aluminio", "Cobre"], correcta: 2 },
+            { pregunta: "¿Cuál es el animal más rápido del mundo?", respuestas: ["Guepardo", "Halcón peregrino", "Águila real", "Leopardo"], correcta: 0 },
+            { pregunta: "¿Cuál es el océano más grande del mundo?", respuestas: ["Atlántico", "Índico", "Ártico", "Pacífico"], correcta: 3 },
+            { pregunta: "¿Qué gas es esencial para la respiración humana?", respuestas: ["Nitrógeno", "Oxígeno", "Dióxido de carbono", "Hidrógeno"], correcta: 1 },
+            { pregunta: "¿Cuál es la función principal de los cloroplastos en las células vegetales?", respuestas: ["Almacenar agua y nutrientes", "Producir energía a través de la respiración celular", "Realizar la fotosíntesis", "Controlar las funciones de la célula"], correcta: 2 },
+            { pregunta: "¿Qué fenómeno ocurre cuando la luz cambia de dirección al pasar de un medio a otro, como del aire al agua?", respuestas: ["Reflexión", "Difracción", "Refracción", "Dispersión"], correcta: 2 },
+            { pregunta: "¿Cuál de los siguientes elementos es un gas noble?", respuestas: ["Oxígeno", "Nitrógeno", "Helio", "Carbono"], correcta: 2 },
+            { pregunta: "¿Cuál es el planeta más cercano al sol del sistema solar?", respuestas: ["Venus", "Mercurio", "Tierra", "Marte"], correcta: 1 },
+            { pregunta: "¿Qué proceso describe la transferencia de energía de un organismo a otro en un ecosistema?", respuestas: ["Ciclo del agua", "Cadena alimentaria", "Fotosíntesis", "Descomposición"], correcta: 1 }
+        ];
+
+        let preguntaActual = 0;
+        let fiftyFiftyUsado = false;
+        let llamadaUsada = false;
+        let publicoUsado = false;
+
+        function mostrarPregunta() {
+            const pregunta = preguntas[preguntaActual];
+            document.getElementById("preguntaTitulo").textContent = `Pregunta ${preguntaActual + 1}`;
+            document.getElementById("preguntaTexto").textContent = pregunta.pregunta;
+            document.getElementById("resultado").textContent = "";
+            const opcionesDiv = document.getElementById("opciones");
+            opcionesDiv.innerHTML = "";
+
+            const literales = ["a", "b", "c", "d"];
+            pregunta.respuestas.forEach((respuesta, index) => {
+                const button = document.createElement("button");
+                button.textContent = `${literales[index]}) ${respuesta}`;
+                button.className = "bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition";
+                button.onclick = () => verificarRespuesta(index);
+                opcionesDiv.appendChild(button);
+            });
+        }
+
+        function verificarRespuesta(index) {
+            if (index === preguntas[preguntaActual].correcta) {
+                document.getElementById("resultado").textContent = "✅ Respuesta correcta";
+                preguntaActual++;
+                if (preguntaActual < preguntas.length) {
+                    setTimeout(mostrarPregunta, 1000);
+                } else {
+                    alert("¡Felicidades! Has completado el juego.");
+                }
+            } else {
+                document.getElementById("resultado").textContent = "❌ Respuesta incorrecta";
+                mostrarPantallaPuntaje();
+            }
+        }
+
+        function mostrarPantallaPuntaje() {
+            document.getElementById("juego").classList.add("hidden");
+            document.getElementById("pantallaPuntaje").classList.remove("hidden");
+            document.getElementById("puntajeFinal").textContent = `Has llegado hasta la pregunta ${preguntaActual + 1}`;
+        }
+
+        function reiniciarJuego() {
+            preguntaActual = 0;
+            fiftyFiftyUsado = false;
+            llamadaUsada = false;
+            publicoUsado = false;
+            document.getElementById("juego").classList.remove("hidden");
+            document.getElementById("pantallaPuntaje").classList.add("hidden");
+            document.getElementById("fiftyFiftyButton").disabled = false;
+            document.getElementById("btnLlamada").disabled = false;
+            document.getElementById("btnPublico").disabled = false;
+            mostrarPregunta();
+        }
+
+        function usar5050() {
+            if (fiftyFiftyUsado) return;
+            fiftyFiftyUsado = true;
+            document.getElementById("fiftyFiftyButton").disabled = true;
+
+            const pregunta = preguntas[preguntaActual];
+            const opciones = document.querySelectorAll("#opciones button");
+            let incorrectasEliminadas = 0;
+
+            opciones.forEach((opcion, index) => {
+                if (index !== pregunta.correcta && incorrectasEliminadas < 2) {
+                    opcion.disabled = true;
+                    opcion.classList.add("opacity-50", "cursor-not-allowed");
+                    incorrectasEliminadas++;
+                }
+            });
+        }
+
+        function llamarAmigo() {
+            if (llamadaUsada) return;
+            llamadaUsada = true;
+            document.getElementById("btnLlamada").disabled = true;
+
+            const pregunta = preguntas[preguntaActual];
+            const respuestaCorrecta = pregunta.respuestas[pregunta.correcta];
+            alert(`📞 Tu amigo te dice que la respuesta correcta podría ser: ${respuestaCorrecta}`);
+        }
+
+        function preguntarPublico() {
+            if (publicoUsado) return;
+            publicoUsado = true;
+            document.getElementById("btnPublico").disabled = true;
+
+            const pregunta = preguntas[preguntaActual];
+            const respuestaCorrecta = pregunta.respuestas[pregunta.correcta];
+            alert(`🏟️ El público opina que la respuesta correcta es: ${respuestaCorrecta}`);
+        }
+
+        mostrarPregunta();
+    </script>
+</body>
+</html>

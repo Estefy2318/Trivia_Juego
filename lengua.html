@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego de Lengua y Literatura</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+    <style>
+        body {
+            background-image: url('https://i.pinimg.com/236x/8c/a7/27/8ca72714fbe659423e81ca16ae66777a.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+    </style>
+</head>
+<body class="bg-green-100 flex items-center justify-center h-screen">
+    <audio id="backgroundMusic" src="Tema.mp3" autoplay loop></audio>
+
+    <div id="juego" class="bg-white p-8 rounded-2xl shadow-lg text-center w-96">
+        <h1 id="preguntaTitulo" class="text-2xl font-bold text-green-600 mb-4"></h1>
+        <p id="preguntaTexto" class="text-gray-600 mb-6"></p>
+
+        <div id="opciones" class="grid grid-cols-2 gap-4 mb-6"></div>
+
+        <button id="fiftyFiftyButton" onclick="usar5050()" 
+            class="bg-yellow-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-yellow-600 transition">
+            50:50
+        </button>
+        <p id="resultado" class="text-lg font-semibold mt-4"></p>
+    </div>
+
+    <div id="pantallaPuntaje" class="hidden bg-white p-8 rounded-2xl shadow-lg text-center w-96">
+        <h1 class="text-2xl font-bold text-red-600 mb-4">Juego Terminado</h1>
+        <p id="puntajeFinal" class="text-gray-600 mb-6"></p>
+        <button onclick="reiniciarJuego()" 
+            class="bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-600 transition">
+            Volver a Intentar
+        </button>
+        <button onclick="window.location.href='prueba.html'" 
+            class="bg-red-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-600 transition mt-4">
+            Regresar al Inicio
+        </button>
+        <button onclick="window.location.href='mpreguntas.html'" 
+            class="bg-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-600 transition mt-4">
+            Mas Cuestionarios
+        </button>
+    </div>
+
+    <script>
+        const preguntas = [
+            { pregunta: "¿Quién es el autor de 'Don Quijote de la Mancha'?", respuestas: ["Miguel de Cervantes", "Garcilaso de la Vega", "Luis de Góngora", "Francisco de Quevedo"], correcta: 0 },
+            { pregunta: "¿Qué figura literaria se usa en 'El sol brilla sobre el mar azul'?", respuestas: ["Metáfora", "Símil", "Personificación", "Hipérbole"], correcta: 1 },
+            { pregunta: "¿Qué género literario pertenece 'Cien años de soledad'?", respuestas: ["Poesía", "Teatro", "Novela", "Ensayo"], correcta: 2 },
+            { pregunta: "¿En qué obra se encuentra el personaje de Hamlet?", respuestas: ["Macbeth", "Hamlet", "Romeo y Julieta", "Otelo"], correcta: 1 },
+            { pregunta: "¿Quién escribió la obra 'La Casa de Bernarda Alba'?", respuestas: ["Federico García Lorca", "Rafael Alberti", "Antonio Machado", "Luis Buñuel"], correcta: 0 },
+            { pregunta: "¿Qué tipo de narrador tiene la obra 'La Regenta' de Leopoldo Alas Clarín?", respuestas: ["Narrador omnisciente", "Narrador protagonista", "Narrador testigo", "Narrador en primera persona"], correcta: 0 },
+            { pregunta: "¿Qué es una rima consonante?", respuestas: ["Cuando las palabras finales coinciden en las consonantes y las vocales", "Cuando sólo las vocales coinciden al final", "Cuando no hay coincidencia de sonidos", "Cuando las palabras riman de forma asonante"], correcta: 0 },
+            { pregunta: "¿Qué significa la expresión 'De tal palo, tal astilla'?", respuestas: ["Que el hijo se parece al padre", "Que hay que cortar madera", "Que las astillas son peligrosas", "Que todos tienen un destino similar"], correcta: 0 },
+            { pregunta: "¿Qué es un soneto?", respuestas: ["Un poema épico", "Un poema de 14 versos con rima consonante", "Un tipo de novela", "Un tipo de ensayo"], correcta: 1 },
+            { pregunta: "¿Quién escribió la obra 'Fervor de Buenos Aires'?", respuestas: ["Jorge Luis Borges", "Leopoldo Lugones", "Adolfo Bioy Casares", "Victoria Ocampo"], correcta: 1 }
+        ];
+
+        let preguntaActual = 0;
+        let puntaje = 0;
+        let fiftyFiftyUsado = false; 
+
+        function mostrarPregunta() {
+            if (preguntaActual >= preguntas.length) {
+                mostrarPantallaPuntaje();
+                return;
+            }
+
+            const pregunta = preguntas[preguntaActual];
+            document.getElementById("preguntaTitulo").textContent = `Pregunta ${preguntaActual + 1}`;
+            document.getElementById("preguntaTexto").textContent = pregunta.pregunta;
+            document.getElementById("resultado").textContent = "";
+
+            const opcionesDiv = document.getElementById("opciones");
+            opcionesDiv.innerHTML = ""; 
+
+            const letras = ["A", "B", "C", "D"]; 
+
+            pregunta.respuestas.forEach((respuesta, index) => {
+                const button = document.createElement("button");
+                button.textContent = `${letras[index]}. ${respuesta}`;
+                button.className = "bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition";
+                button.onclick = () => verificarRespuesta(index);
+                button.dataset.index = index;
+                opcionesDiv.appendChild(button);
+            });
+
+            if (fiftyFiftyUsado) {
+                document.getElementById("fiftyFiftyButton").disabled = true;
+                document.getElementById("fiftyFiftyButton").classList.add("bg-gray-400", "cursor-not-allowed");
+            } else {
+                document.getElementById("fiftyFiftyButton").disabled = false;
+                document.getElementById("fiftyFiftyButton").classList.remove("bg-gray-400", "cursor-not-allowed");
+            }
+        }
+
+        function verificarRespuesta(index) {
+            if (index === preguntas[preguntaActual].correcta) {
+                puntaje++;
+                preguntaActual++;
+                mostrarPregunta();
+            } else {
+                mostrarPantallaPuntaje();
+            }
+        }
+
+        function usar5050() {
+            if (fiftyFiftyUsado) return; 
+
+            const opciones = document.querySelectorAll('#opciones button');
+            let incorrectas = Array.from(opciones).filter(btn => btn.dataset.index != preguntas[preguntaActual].correcta);
+
+            let aEliminar = incorrectas.sort(() => Math.random() - 0.5).slice(0, 2);
+
+            aEliminar.forEach((btn) => {
+                btn.disabled = true;
+                btn.classList.add('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
+            });
+
+            document.getElementById("fiftyFiftyButton").disabled = true; 
+            document.getElementById("fiftyFiftyButton").classList.add("bg-gray-400", "cursor-not-allowed");
+            fiftyFiftyUsado = true;
+        }
+
+        function mostrarPantallaPuntaje() {
+            document.getElementById("juego").classList.add("hidden");
+            document.getElementById("pantallaPuntaje").classList.remove("hidden");
+            document.getElementById("puntajeFinal").textContent = `Respondiste correctamente ${puntaje} de ${preguntas.length} preguntas.`;
+        }
+
+        function reiniciarJuego() {
+            preguntaActual = 0;
+            puntaje = 0;
+            fiftyFiftyUsado = false; 
+            document.getElementById("pantallaPuntaje").classList.add("hidden");
+            document.getElementById("juego").classList.remove("hidden");
+            mostrarPregunta();
+        }
+
+        mostrarPregunta();
+    </script>
+</body>
+</html>
